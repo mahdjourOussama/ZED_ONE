@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">ZED_ONE</string>
+    <string name="log_in_to_zed_one">LOG IN </string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="sign_in">SIGN IN</string>
+    <string name="sign_in_to_zed_one">SIGN IN </string>
+    <string name="click_to_log_in">Click to Log IN</string>
+    <string name="click_to_sign_in">Click to Sign in</string>
+    <string name="log_in">LOG IN</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

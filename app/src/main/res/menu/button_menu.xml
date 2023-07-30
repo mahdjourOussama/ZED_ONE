@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <item android:title="Devices"
+        android:id="@+id/Devices"
+        android:icon="@drawable/baseline_device_hub_24"
+
+        />
+    <item android:title="Dashboard"
+        android:id="@+id/Dashboard"
+        android:icon="@drawable/baseline_home_24"
+        android:checked="true"
+        />
+
+    <item android:title="Tracking"
+        android:id="@+id/Tracking"
+        android:icon="@drawable/baseline_not_listed_location_24"
+
+        />
+
+</menu>
