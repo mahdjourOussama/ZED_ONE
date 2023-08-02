@@ -32,8 +32,9 @@ public class DevicesFragment extends Fragment {
     private ArrayList<String> list =null;
     private ArrayAdapter adapter =null;
 
+    private String UserID;
     private Button add_btn = null;
-    private EditText ID_TextEdit= null;
+    private EditText ID_TextEdit= null,Serial_TextEdit=null;
     private int Devices_count=0;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -42,7 +43,8 @@ public class DevicesFragment extends Fragment {
         View rootView =inflater.inflate(R.layout.fragment_devices, container, false);
         // setting up the ADD section
         add_btn = rootView.findViewById(R.id.add_btn);
-        ID_TextEdit =rootView.findViewById(R.id.search_bar);
+        ID_TextEdit =rootView.findViewById(R.id.Device_Name_EditText);
+        Serial_TextEdit=rootView.findViewById(R.id.Serial_code_EditText);
 
         // Setting up the ListView
         listview = (ListView) rootView.findViewById(R.id.listview);
@@ -50,9 +52,13 @@ public class DevicesFragment extends Fragment {
         adapter = new ArrayAdapter<>(getActivity(),R.layout.devices_list,list);
         listview.setAdapter(adapter);
 
+        // Retrieve the UserID from the arguments
+        UserID = getArguments().getString("UserID");
         // Handling database connection
         db =FirebaseDatabase.getInstance();
-        DatabaseReference reference= db.getReference().child("User_2").child("Devices");
+        DatabaseReference reference= db.getReference().child(UserID).child("Devices");
+
+
 
         // Fetching Data and Updating ListView
         reference.addValueEventListener(new ValueEventListener() {
@@ -64,7 +70,7 @@ public class DevicesFragment extends Fragment {
                 list.clear();
                 for (DataSnapshot s : dataSnapshot.getChildren()){
                     Device device = s.getValue(Device.class);
-                    list.add("Device Name: "+device.getName());
+                    list.add("Device Name: "+device.getName()+" WIth ID :"+ device.getDeviceID());
 
                 }
                 adapter.notifyDataSetChanged();
@@ -82,22 +88,33 @@ public class DevicesFragment extends Fragment {
         add_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String ID_text = ID_TextEdit.getText().toString();
+                String ID_text = ID_TextEdit.getText().toString(),
+                        SCode = Serial_TextEdit.getText().toString();
                 if(ID_text.isEmpty())
                     Toast.makeText(getContext(),"Enter ID", Toast.LENGTH_SHORT).show();
-                else {
-                    HashMap<String, Coordinates> location =new HashMap<String, Coordinates>();
-                    Coordinates initialState =new Coordinates("00:00:00",0,0);
-                    location.put(initialState.getTimestamp(),initialState);
-                    Device device = new Device(ID_text,location);
+                else if (SCode.isEmpty()) {
+                    Toast.makeText(getContext(),"Enter Serial Code", Toast.LENGTH_SHORT).show();
+                }else {
+                    String deviceID="D" + (int)(Devices_count + 1);
+                    Device device = new Device(ID_text,deviceID,SCode);
                     //Toast.makeText(getContext(),""+device.getLoc().size(), Toast.LENGTH_SHORT).show();
-                    reference.child("Device " + (int)(Devices_count + 1)).setValue(device);
+                    reference.child(deviceID).setValue(device);
+                    HashMap<String,String> dict = new HashMap<>();
+                    dict.put("DeviceID",deviceID);
+                    dict.put("UserID",UserID);
+                    db.getReference().child("Devices").child(SCode).setValue(dict);
                 }
             }
         });
         return rootView;
     }
 
-
+    public static DevicesFragment newInstance(String userID) {
+        DevicesFragment fragment = new DevicesFragment();
+        Bundle args = new Bundle();
+        args.putString("UserID", userID);
+        fragment.setArguments(args);
+        return fragment;
+    }
    
 }

@@ -5,6 +5,8 @@ import static android.content.ContentValues.TAG;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
 import android.os.Bundle;
 
 import androidx.core.app.ActivityCompat;
@@ -49,8 +51,9 @@ public class DashboardFragment extends Fragment {
     private FirebaseAuth auth;
     private FirebaseUser user;
     private FirebaseDatabase db =null;
-    private String User_ID="User_2";
+    private String UserID;
 
+    private LocationHelper locationHelper;
 
     private ListView listview =null;
     private ArrayList<String> Device_Name_List =null;
@@ -60,7 +63,14 @@ public class DashboardFragment extends Fragment {
 
 
 
-
+    // Static method to create a new instance of the DevicesFragment and pass UserID as an argument
+    public static DashboardFragment newInstance(String userID) {
+        DashboardFragment fragment = new DashboardFragment();
+        Bundle args = new Bundle();
+        args.putString("UserID", userID);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -84,19 +94,42 @@ public class DashboardFragment extends Fragment {
         map.setBuiltInZoomControls(false);
         map.setMultiTouchControls(true);
         map.setMinZoomLevel(5.00);
+        centralizeMapView(0,0,19);
 
-        // Setting up view
-        double userLat =35.392895,userLong=-1.091218;
-        centralizeMapView(userLat,userLong,19);
 
         // Get the permission needed
         String[] permissions = new String[]{
                 // if you need to show the current location, uncomment the line below
-                // Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
                 // WRITE_EXTERNAL_STORAGE is required in order to show the map
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         };
         requestPermissionsIfNecessary(permissions);
+
+        // Initialize LocationHelper
+        locationHelper = new LocationHelper(getContext());
+
+        // Create a location listener to receive updates
+        LocationListener locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                updateLocationUI(location);
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {}
+
+            @Override
+            public void onProviderEnabled( String provider) {}
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {}
+        };
+
+        // Request location updates
+        locationHelper.requestLocationUpdates(locationListener);
+
+
 
         // initialize the overlay
         OverlayList = new ArrayList<>();
@@ -130,9 +163,11 @@ public class DashboardFragment extends Fragment {
 
         listview.setAdapter(adapter);
 
+        // Retrieve the UserID from the arguments
+        UserID = getArguments().getString("UserID");
         // Handling database connection
         db = FirebaseDatabase.getInstance();
-        DatabaseReference reference= db.getReference().child(User_ID).child("Devices");
+        DatabaseReference reference= db.getReference().child(UserID).child("Devices");
 
 
         // Fetching Data and Updating ListView
@@ -167,7 +202,7 @@ public class DashboardFragment extends Fragment {
                     OverlayList.add(DeviceOverlay);
 
                     // Appending the Device ID to Device List
-                    Device_Name_List.add(device.getName());
+                    Device_Name_List.add(device.getName()+" , ID :"+device.getDeviceID());
                 }
 
                 // Update Adapter
@@ -251,4 +286,12 @@ public class DashboardFragment extends Fragment {
         mapController.setCenter(startPoint);
     }
 
+    // Update UI with location data
+    private void updateLocationUI(Location location) {
+        if (location != null) {
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+            centralizeMapView(latitude,longitude,19);
+        }
+    }
 }

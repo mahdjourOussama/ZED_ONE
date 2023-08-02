@@ -26,7 +26,18 @@
         android:ems="10"
         android:gravity="center"
         android:hint="@string/email"
-        android:inputType="text"
+        android:inputType="textEmailAddress"
+        android:minHeight="48dp" />
+
+    <EditText
+        android:id="@+id/signin_username_EditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:ems="10"
+        android:gravity="center"
+        android:hint="@string/username"
+        android:inputType="textPersonName"
         android:minHeight="48dp" />
 
     <EditText

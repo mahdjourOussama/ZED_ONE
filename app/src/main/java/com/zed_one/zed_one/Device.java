@@ -4,12 +4,19 @@ import java.util.HashMap;
 import java.util.TreeMap;
 
 public class Device {
-    private  String Name;
+    private  String Name,DeviceID,Serial_Code;
     private HashMap<String,Coordinates> Loc;
 
-    public Device(String id, HashMap<String,Coordinates> Loc) {
-        this.Name = id;
+    public Device(String Name,String deviceID, HashMap<String,Coordinates> Loc) {
+        this.Name = Name;
+        this.DeviceID=deviceID;
         this.Loc =  Loc;
+    }
+    public Device(String Name,String deviceID , String SCode) {
+        this.Name = Name;
+        this.DeviceID=deviceID;
+        this.Loc =  new HashMap<>();
+        this.Serial_Code =SCode;
     }
     public Device() {
         // Empty constructor required for Firebase
@@ -43,5 +50,21 @@ public class Device {
 
     public void setNewLocation(Coordinates newCoordinates){
         Loc.put(newCoordinates.getTimestamp(),newCoordinates);
+    }
+
+    public String getDeviceID() {
+        return DeviceID;
+    }
+
+    public void setDeviceID(String deviceID) {
+        DeviceID = deviceID;
+    }
+
+    public String getSerial_Code() {
+        return Serial_Code;
+    }
+
+    public void setSerial_Code(String serial_Code) {
+        Serial_Code = serial_Code;
     }
 }

@@ -5,6 +5,8 @@ import static android.content.ContentValues.TAG;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
 import android.os.Bundle;
 
 import androidx.core.app.ActivityCompat;
@@ -39,7 +41,6 @@ import org.osmdroid.views.overlay.ItemizedOverlayWithFocus;
 import org.osmdroid.views.overlay.OverlayItem;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class TrakingFragment extends Fragment {
 
@@ -55,7 +56,7 @@ public class TrakingFragment extends Fragment {
     private FirebaseAuth auth;
     private FirebaseUser user;
     private FirebaseDatabase db =null;
-    private String User_ID="User_2";
+    private String UserID;
 
 
     private ListView listview =null;
@@ -63,6 +64,8 @@ public class TrakingFragment extends Fragment {
     private ArrayAdapter adapter =null;
     private ArrayList<OverlayItem> OverlayList=null;
     private ItemizedOverlayWithFocus<OverlayItem> overlay;
+
+    private LocationHelper locationHelper;
 
     private Button add_btn = null;
     private EditText ID_TextEdit= null;
@@ -90,20 +93,43 @@ public class TrakingFragment extends Fragment {
         map.setBuiltInZoomControls(false);
         map.setMultiTouchControls(true);
         map.setMinZoomLevel(5.00);
-
-        // Setting up view
-        double userLat =35.392895,userLong=-1.091218;
-        centralizeMapView(userLat,userLong,19);
+        centralizeMapView(0,0,10);
 
         // Get the permission needed
         String[] permissions = new String[]{
                 // if you need to show the current location, uncomment the line below
-                // Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION,
                 // WRITE_EXTERNAL_STORAGE is required in order to show the map
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         };
         requestPermissionsIfNecessary(permissions);
 
+        // Initialize LocationHelper
+        locationHelper = new LocationHelper(getContext());
+
+        // Create a location listener to receive updates
+        LocationListener locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                updateLocationUI(location);
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {}
+
+            @Override
+            public void onProviderEnabled( String provider) {}
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {}
+        };
+
+        // Request location updates
+        locationHelper.requestLocationUpdates(locationListener);
+
+
+        // Retrieve the UserID from the arguments
+        UserID = getArguments().getString("UserID");
         // initialize the overlay
         OverlayList = new ArrayList<>();
 
@@ -138,7 +164,7 @@ public class TrakingFragment extends Fragment {
 
         // Handling database connection
         db = FirebaseDatabase.getInstance();
-        DatabaseReference reference= db.getReference().child(User_ID).child("Devices");
+        DatabaseReference reference= db.getReference().child(UserID).child("Devices");
 
 
         // Fetching Data and Updating ListView
@@ -158,7 +184,8 @@ public class TrakingFragment extends Fragment {
                     Device device = s.getValue(Device.class);
 
                     // Appending the Device ID to Device List
-                    Device_Name_List.add(device.getName());
+                    // Appending the Device ID to Device List
+                    Device_Name_List.add(device.getName()+" , ID :"+device.getDeviceID());
                 }
 
                 // Update Adapter
@@ -175,7 +202,7 @@ public class TrakingFragment extends Fragment {
 
         // setting up the ADD section
         add_btn = rootView.findViewById(R.id.add_btn);
-        ID_TextEdit =rootView.findViewById(R.id.search_bar);
+        ID_TextEdit =rootView.findViewById(R.id.Device_Name_EditText);
         add_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -253,7 +280,7 @@ public class TrakingFragment extends Fragment {
 
         // Handling database connection
         db = FirebaseDatabase.getInstance();
-        DatabaseReference reference= db.getReference().child(User_ID).child("Devices").child(DeviceID);
+        DatabaseReference reference= db.getReference().child(UserID).child("Devices").child(DeviceID);
 
 
         // Fetching Data and Updating ListView
@@ -273,7 +300,7 @@ public class TrakingFragment extends Fragment {
                     Toast.makeText(getContext(), "" + device.getName(), Toast.LENGTH_SHORT).show();
 
                 // Read the through the Response object
-
+                    centralizeMapView(device.GetLastLocation().getLatitude(),device.GetLastLocation().getLongitude(),21);
 
                 for (Coordinates l : device.getLoc().values()){
 
@@ -309,5 +336,21 @@ public class TrakingFragment extends Fragment {
                 Log.w(TAG, "Failed to read value.", error.toException());
             }
         });
+    }
+
+    // Static method to create a new instance of the Traking and pass UserID as an argument
+    public static TrakingFragment newInstance(String userID) {
+        TrakingFragment fragment = new TrakingFragment();
+        Bundle args = new Bundle();
+        args.putString("UserID", userID);
+        fragment.setArguments(args);
+        return fragment;
+    }
+    private void updateLocationUI(Location location) {
+        if (location != null) {
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+            centralizeMapView(latitude,longitude,19);
+        }
     }
 }

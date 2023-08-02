@@ -29,7 +29,7 @@
             app:layout_constraintTop_toTopOf="parent">
 
             <EditText
-                android:id="@+id/search_bar"
+                android:id="@+id/Device_Name_EditText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -37,6 +37,17 @@
                 android:layout_weight="1"
                 android:ems="10"
                 android:hint="name"
+                android:inputType="text"
+                android:minHeight="48dp" />
+            <EditText
+                android:id="@+id/Serial_code_EditText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:layout_weight="1"
+                android:ems="10"
+                android:hint="Serial Code"
                 android:inputType="text"
                 android:minHeight="48dp" />
 
