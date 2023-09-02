@@ -94,7 +94,7 @@ public class DashboardFragment extends Fragment {
         map.setBuiltInZoomControls(false);
         map.setMultiTouchControls(true);
         map.setMinZoomLevel(5.00);
-        centralizeMapView(0,0,19);
+        centralizeMapViewOnAlgeria();
 
 
         // Get the permission needed
@@ -174,48 +174,55 @@ public class DashboardFragment extends Fragment {
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
+                try {
 
-                // Reset the Lists
-                Device_Name_List.clear();
-                OverlayList.clear();
-                // Clear the existing overlay items
-                overlay.removeAllItems();
+                    // This method is called once with the initial value and again
+                    // whenever data at this location is updated.
 
-                // Read the through the Response object
-                for (DataSnapshot s : dataSnapshot.getChildren()){
+                    // Reset the Lists
+                    Device_Name_List.clear();
+                    OverlayList.clear();
+                    // Clear the existing overlay items
+                    overlay.removeAllItems();
 
-                    //extracting data from the firebase snapshot
-                    Device device = s.getValue(Device.class);
+                    // Read the through the Response object
+                    for (DataSnapshot s : dataSnapshot.getChildren()){
 
-                    // extract the Coordinates From the Device Object
-                    Coordinates LastLocation = device.GetLastLocation();
+                        //extracting data from the firebase snapshot
+                        Device device = s.getValue(Device.class);
 
-                    // Creating Marker Point
-                    GeoPoint markerPoint = new GeoPoint( LastLocation.getLatitude(), LastLocation.getLongitude() );
+                        // extract the Coordinates From the Device Object
+                        Coordinates LastLocation = device.GetLastLocation();
 
-                    // Creating Overlay Object
-                    OverlayItem DeviceOverlay = new OverlayItem(device.getName(), LastLocation.getTimestamp(), markerPoint);
+                        // Creating Marker Point
+                        GeoPoint markerPoint = new GeoPoint( LastLocation.getLatitude(), LastLocation.getLongitude() );
 
-                    // Appending Overlay to the list
-                    OverlayList.add(DeviceOverlay);
+                        // Creating Overlay Object
+                        OverlayItem DeviceOverlay = new OverlayItem(device.getName(), LastLocation.getTimestamp(), markerPoint);
 
-                    // Appending the Device ID to Device List
-                    Device_Name_List.add(device.getName()+" , ID :"+device.getDeviceID());
+                        // Appending Overlay to the list
+                        OverlayList.add(DeviceOverlay);
+
+                        // Appending the Device ID to Device List
+                        Device_Name_List.add(device.getName()+" , ID :"+device.getDeviceID());
+                    }
+
+                    // Update Adapter
+                    adapter.notifyDataSetChanged();
+                    // Add the updated overlay items
+                    overlay.addItems(OverlayList);
+
+                    // Add the overlay back to the map
+                    map.getOverlays().add(overlay);
+
+                    // Refresh the map
+                    map.invalidate();
+
+                } catch (Exception e) {
+                    // Handle any exceptions here, e.g., data not available, parsing errors, etc.
+                    Log.e(TAG, "Error fetching and processing data: " + e.getMessage());
+                    e.printStackTrace();
                 }
-
-                // Update Adapter
-                adapter.notifyDataSetChanged();
-                // Add the updated overlay items
-                overlay.addItems(OverlayList);
-
-                // Add the overlay back to the map
-                map.getOverlays().add(overlay);
-
-                // Refresh the map
-                map.invalidate();
-
             }
 
             @Override
@@ -291,7 +298,14 @@ public class DashboardFragment extends Fragment {
         if (location != null) {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-            centralizeMapView(latitude,longitude,19);
+            centralizeMapView(latitude,longitude,17);
         }
+    }
+    private void centralizeMapViewOnAlgeria() {
+        // Setting up initial point for Algeria (approximately the center)
+        mapController = map.getController();
+        mapController.setZoom(7.0); // Adjust the zoom level as needed
+        GeoPoint centerOfAlgeria = new GeoPoint(28.0339, 1.6596); // Approximate center coordinates of Algeria
+        mapController.setCenter(centerOfAlgeria);
     }
 }

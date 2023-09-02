@@ -5,6 +5,7 @@ import static android.content.ContentValues.TAG;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
@@ -39,8 +40,10 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.ItemizedOverlayWithFocus;
 import org.osmdroid.views.overlay.OverlayItem;
+import org.osmdroid.views.overlay.Polyline;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class TrakingFragment extends Fragment {
 
@@ -50,6 +53,7 @@ public class TrakingFragment extends Fragment {
 
     // Map Declaration
     private MapView map = null;
+    Polyline polyline;
     private IMapController mapController;
 
     // Firebase Declaration
@@ -93,7 +97,8 @@ public class TrakingFragment extends Fragment {
         map.setBuiltInZoomControls(false);
         map.setMultiTouchControls(true);
         map.setMinZoomLevel(5.00);
-        centralizeMapView(0,0,10);
+        centralizeMapViewOnAlgeria();
+        polyline = new Polyline(map);
 
         // Get the permission needed
         String[] permissions = new String[]{
@@ -154,7 +159,7 @@ public class TrakingFragment extends Fragment {
 
         // Add the overlay to the map
         map.getOverlays().add(overlay);
-
+        map.getOverlays().add(polyline);
         // Setting up the ListView
         listview = (ListView) rootView.findViewById(R.id.Devices_ListView);
         Device_Name_List = new ArrayList<>();
@@ -171,25 +176,32 @@ public class TrakingFragment extends Fragment {
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
+                try{
+                    // This method is called once with the initial value and again
+                    // whenever data at this location is updated.
 
-                // Reset the Lists
-                Device_Name_List.clear();
+                    // Reset the Lists
+                    Device_Name_List.clear();
 
-                // Read the through the Response object
-                for (DataSnapshot s : dataSnapshot.getChildren()){
+                    // Read the through the Response object
+                    for (DataSnapshot s : dataSnapshot.getChildren()){
 
-                    //extracting data from the firebase snapshot
-                    Device device = s.getValue(Device.class);
+                        //extracting data from the firebase snapshot
+                        Device device = s.getValue(Device.class);
 
-                    // Appending the Device ID to Device List
-                    // Appending the Device ID to Device List
-                    Device_Name_List.add(device.getName()+" , ID :"+device.getDeviceID());
+                        // Appending the Device ID to Device List
+                        // Appending the Device ID to Device List
+                        Device_Name_List.add(device.getName()+" , ID :"+device.getDeviceID());
+                    }
+
+                    // Update Adapter
+                    adapter.notifyDataSetChanged();
+                } catch (Exception e) {
+                    // Handle any exceptions here, e.g., data not available, parsing errors, etc.
+                    Log.e(TAG, "Error fetching and processing data: " + e.getMessage());
+                    e.printStackTrace();
                 }
 
-                // Update Adapter
-                adapter.notifyDataSetChanged();
             }
 
             @Override
@@ -268,6 +280,13 @@ public class TrakingFragment extends Fragment {
         }
     }
 
+    private void centralizeMapViewOnAlgeria() {
+        // Setting up initial point for Algeria (approximately the center)
+        mapController = map.getController();
+        mapController.setZoom(7.0); // Adjust the zoom level as needed
+        GeoPoint centerOfAlgeria = new GeoPoint(28.0339, 1.6596); // Approximate center coordinates of Algeria
+        mapController.setCenter(centerOfAlgeria);
+    }
     private void centralizeMapView(double UserLat, double UserLong, double Zoom){
         // Setting up initial point
         mapController = map.getController();
@@ -276,57 +295,69 @@ public class TrakingFragment extends Fragment {
         mapController.setCenter(startPoint);
     }
 
-    private void getData(String DeviceID){
-
+    private void getData(String DeviceID) {
         // Handling database connection
         db = FirebaseDatabase.getInstance();
-        DatabaseReference reference= db.getReference().child(UserID).child("Devices").child(DeviceID);
-
+        DatabaseReference reference = db.getReference().child(UserID).child("Devices").child(DeviceID);
 
         // Fetching Data and Updating ListView
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
 
-                OverlayList.clear();
-                // Clear the existing overlay items
-                overlay.removeAllItems();
+                try{
+                    // This method is called once with the initial value and again
+                    // whenever data at this location is updated.
 
-                Device device = dataSnapshot.getValue(Device.class);
-                if (device != null) {
-                    // Data for the specific DeviceID is retrieved
-                    Toast.makeText(getContext(), "" + device.getName(), Toast.LENGTH_SHORT).show();
+                    OverlayList.clear();
+                    // Clear the existing overlay items
+                    overlay.removeAllItems();
+                    List<GeoPoint> geoPoints = new ArrayList<>();
+                    Device device = dataSnapshot.getValue(Device.class);
+                    if (device != null) {
+                        // Data for the specific DeviceID is retrieved
+                        Toast.makeText(getContext(), "" + device.getName(), Toast.LENGTH_SHORT).show();
 
-                // Read the through the Response object
-                    centralizeMapView(device.GetLastLocation().getLatitude(),device.GetLastLocation().getLongitude(),21);
+                        // Read the through the Response object
+                        centralizeMapView(device.GetLastLocation().getLatitude(), device.GetLastLocation().getLongitude(), 15);
 
-                for (Coordinates l : device.getLoc().values()){
+                        for (Coordinates l : device.getOrderedLoc().values()) {
 
-                    // Creating Marker Point
-                    GeoPoint markerPoint = new GeoPoint( l.getLatitude(), l.getLongitude() );
+                            // Creating Marker Point
+                            GeoPoint markerPoint = new GeoPoint(l.getLatitude(), l.getLongitude());
+                            geoPoints.add(markerPoint);
 
-                    // Creating Overlay Object
-                    OverlayItem DeviceOverlay = new OverlayItem(device.getName(), l.getTimestamp(), markerPoint);
+                            // Creating Overlay Object
+                            OverlayItem DeviceOverlay = new OverlayItem(device.getName(), l.getTimestamp(), markerPoint);
 
-                    // Appending Overlay to the list
-                    OverlayList.add(DeviceOverlay);
+                            // Appending Overlay to the list
+                            OverlayList.add(DeviceOverlay);
+                        }
 
-                }
+                    } else {
+                        // Data not found for the specified DeviceID
+                        Toast.makeText(getContext(), "Device not found", Toast.LENGTH_SHORT).show();
+                    }
 
-                } else {
-                    // Data not found for the specified DeviceID
-                    Toast.makeText(getContext(), "Device not found", Toast.LENGTH_SHORT).show();
-                }
-                // Add the updated overlay items
-                overlay.addItems(OverlayList);
+                    // Set the color and width of the Polyline
+                    polyline.setColor(Color.BLACK); // You can choose any color you like
+                    polyline.setWidth(5.0f); // Adjust the width as needed
+                    // Set the points for the Polyline
+                    polyline.setPoints(geoPoints);
 
-                // Add the overlay back to the map
-                map.getOverlays().add(overlay);
+                    // Add the updated overlay items
+                    overlay.addItems(OverlayList);
 
-                // Refresh the map
-                map.invalidate();
+                    // Add the overlay back to the map
+                    map.getOverlays().add(overlay);
+
+                    // Refresh the map
+                    map.invalidate();
+                } catch (Exception e) {
+                // Handle any exceptions here, e.g., data not available, parsing errors, etc.
+                Log.e(TAG, "Error fetching and processing data: " + e.getMessage());
+                e.printStackTrace();
+            }
 
             }
 
@@ -337,6 +368,7 @@ public class TrakingFragment extends Fragment {
             }
         });
     }
+
 
     // Static method to create a new instance of the Traking and pass UserID as an argument
     public static TrakingFragment newInstance(String userID) {
@@ -350,7 +382,7 @@ public class TrakingFragment extends Fragment {
         if (location != null) {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-            centralizeMapView(latitude,longitude,19);
+            centralizeMapView(latitude,longitude,17);
         }
     }
 }

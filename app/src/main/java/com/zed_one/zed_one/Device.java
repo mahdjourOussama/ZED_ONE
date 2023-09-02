@@ -33,7 +33,10 @@ public class Device {
     public HashMap<String,Coordinates> getLoc() {
         return Loc;
     }
-
+    public TreeMap<String,Coordinates> getOrderedLoc() {
+        TreeMap<String,Coordinates> m = new TreeMap<>(Loc);
+        return m;
+    }
     public void setLoc(HashMap<String,Coordinates> loc) {
         Loc = loc;
     }

@@ -64,17 +64,24 @@ public class DevicesFragment extends Fragment {
         reference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
+                try {
+                    // This method is called once with the initial value and again
+                    // whenever data at this location is updated.
 
-                list.clear();
-                for (DataSnapshot s : dataSnapshot.getChildren()){
-                    Device device = s.getValue(Device.class);
-                    list.add("Device Name: "+device.getName()+" WIth ID :"+ device.getDeviceID());
+                    list.clear();
+                    for (DataSnapshot s : dataSnapshot.getChildren()){
+                        Device device = s.getValue(Device.class);
+                        list.add("Device Name: "+device.getName()+",ID :"+ device.getDeviceID());
 
+                    }
+                    adapter.notifyDataSetChanged();
+                    Devices_count = (int) dataSnapshot.getChildrenCount();
+                } catch (Exception e) {
+                    // Handle any exceptions here, e.g., data not available, parsing errors, etc.
+                    Log.e(TAG, "Error fetching and processing data: " + e.getMessage());
+                    e.printStackTrace();
                 }
-                adapter.notifyDataSetChanged();
-                Devices_count = (int) dataSnapshot.getChildrenCount();
+
             }
 
             @Override
